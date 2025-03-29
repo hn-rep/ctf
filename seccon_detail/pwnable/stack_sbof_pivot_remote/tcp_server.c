@@ -29,6 +29,16 @@ int tcp_server(int port, char *buf, int len)
 	/* TCPクライアントからデータを受信 */
 	len = read(sock, buf, sizeof(buf));
 	printf("len=%d, buf=%s\n", len, buf);
+	{
+		printf("len=%d, buf=%s\n", len, buf);
+		printf("[%02x]", buf[0]);
+		printf("[%02x]", buf[1]);
+		int ii;
+		for( ii = 0; ii < len; ii++ )
+		{
+			printf("[%02x]", buf[ii]);
+		}
+	}
 
 	close(sock);
 	close(sock_server);

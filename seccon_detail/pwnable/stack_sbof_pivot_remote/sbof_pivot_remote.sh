@@ -2,7 +2,7 @@
 
 # [rp++ install]
 # sudo apt update
-# sudo apt install cmake
+# sudo apt install cmake ninja-build
 # chmod u+x ./build-release.sh && ./build-release.sh
 #
 # git clone https://github.com/0vercl0k/rp
