@@ -20,4 +20,4 @@ $HOME/git/rp/src/build/rp-lin -f sbof_pivot -r 5 --unique --print-bytes  | grep 
 $HOME/git/rp/src/build/rp-lin -f sbof_pivot -r 5 --unique --print-bytes  | grep -A 1 "pop rsi"
 
 #./exploit_sbof_pivot_draft.py | ./sbof_pivot
-./exploit_sbof_pivot.py | ./sbof_pivot
+stdbuf -o0 -e0 python3 ./exploit_sbof_pivot.py
