@@ -14,20 +14,21 @@ void win1(void){
 
 void win2(unsigned key, unsigned key2, unsigned key3){
 	puts("This is win2\n");
+
 	if(key == 0xcafebabe)
-		puts("Correct!");
+		puts("[arg1] Correct!");
 	else
-		puts("Wrong...");
+		puts("[arg1] Wrong...");
 
 	if(key2 == 0xcafebabe)
-		puts("Correct!2");
+		puts("[arg2] Correct!");
 	else
-		puts("Wrong...2");
+		puts("[arg2] Wrong...");
 
 	if(key3 == 0xcafebabe)
-		puts("Correct!3");
+		puts("[arg3] Correct!");
 	else
-		puts("Wrong...3");
+		puts("[arg3] Wrong...");
 }
 
 void dummy(void){
