@@ -13,8 +13,11 @@ int main(void){
 
 	ma = malloc(MALLOC_SIZE);
 	ca = mem2chunk(ma);
-	malloc(0);				// malloc(0x418)でもよい。これをしないと何故かlibcのアドレスリークはできない
-	//mb = malloc(0x418);	//
+	
+	// glibc 2.29以降では、free直後にmain_arenaからfd/bkが上書きされないよう最初のmallocでarenaが初期化されている必要があるため、
+	// ここでdummyのmalloc(0)をしておくと確実にarenaのアドレスがfd/bkに書き込まれるようになります。
+	malloc(0);				// malloc(0x418)でもよい。
+	//mb = malloc(0x418);
 	//malloc(0);
 
 	free(ma);
