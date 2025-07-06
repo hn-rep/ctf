@@ -9,6 +9,7 @@ int main(void){
 	printf("m = %p\n", m);
 
 	free(m);
+	// tcache_entry の key を NULL に書き換えていることで、ダブルフリー検出を回避
 	((tcache_entry*)m)->key = NULL;	// vuln
 	free(m);			// vuln
 

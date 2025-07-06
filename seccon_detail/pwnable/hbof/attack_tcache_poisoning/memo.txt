@@ -1,0 +1,98 @@
+このコードは、glibc の tcache 機構の脆弱性を悪用した "tcache poisoning" 攻撃の基本例です。
+
+簡潔に言うと：
+
+    malloc() によって、本来確保されるはずのない グローバル変数のアドレス（&var）を返させる ことで、任意のアドレスを書き換える という攻撃を実現しています。
+
+🔧 全体の流れ
+準備
+
+unsigned long var = 0xdeadbeef;
+
+    通常のグローバル変数。これを malloc() で確保したふりをして、書き換えを狙う。
+
+チャンク確保・解放
+
+ma = malloc(0x18);
+mb = malloc(0x18);
+
+free(mb);
+free(ma);
+
+    ma, mb という2つのチャンク（0x18バイト）を確保。
+
+    その後、mb → ma の順で free() することで、tcache の bin リストがこうなる：
+
+tcache[0x20] → ma → mb → NULL
+
+    注：0x18サイズのチャンクは、内部的に最小割当サイズ（sizeof(tcache_entry) などでアライメント調整）で 0x20 バイト程度と見なされる。
+
+🧨 攻撃開始：tcache poisoning
+
+((tcache_entry*)ma)->next = (void*)&var; // vuln
+
+    ここが 脆弱性（vulnerability）部分。
+
+    ma が今 tcache の先頭（head）にいるため、これを書き換えることで次の malloc() の返すポインタを操作できる。
+
+    ma->next に &var を書くことで、「次に malloc(0x18) したら &var を返せ」と tcache に細工する。
+
+メモリ取得：malloc() で var を取得
+
+malloc(0x18);         // これは ma を取り出して破棄（中間ステップ）
+victim = malloc(0x18); // ma->next（≒ &var）が返る！
+
+    1回目の malloc(0x18) で ma を消費（中身はもうどうでもいい）。
+
+    次の malloc(0x18) で、ma->next に設定した &var が返る。
+    → つまり victim == &var
+
+上書き：グローバル変数 var を変更！
+
+*victim = 0xcafebabe;
+
+    victim == &var なので、var = 0xcafebabe に書き換えられる。
+
+🔍 最終出力結果
+
+printf("victim = %p\nvar    = %#lx\n", victim, var);
+
+想定される出力例：
+
+&var   : 0x555555558040
+var    = 0xdeadbeef
+
+Exploit!
+victim = 0x555555558040
+var    = 0xcafebabe
+
+🧠 このコードがしていることまとめ
+ステップ	内容
+malloc(0x18) x2	2つのチャンク（ma, mb）を確保
+free()	tcache に登録（mb → ma）
+ma->next = &var	tcache poisoning：次に返すチャンクを改ざん
+malloc() x2	2回目の malloc が &var を返す
+*victim = 0xcafebabe	任意のアドレス（今回は var）を上書き！
+🔒 セキュリティ的観点
+
+このコードは典型的な：
+
+    Heap exploitation（ヒープを使った任意書き換え）
+
+    tcache poisoning
+
+    Write-what-where プリミティブの実現
+
+に該当します。
+
+このような攻撃を防ぐには：
+
+    glibc のバージョンを更新してチェック強化（例：double free や tcache poisoning 防止のための key フィールドのチェック）。
+
+    セキュリティコンパイルオプション（FORTIFY_SOURCE, ASLR, PIE, RELRO, canary）の導入。
+
+✅ まとめ
+
+このコードは、**ヒープ解放後の領域を改ざんし、malloc() で任意のアドレスを返させて、望まぬ場所（今回は var）を書き換える攻撃のPoC（実証）**です。
+
+tcache poisoning による write-what-where の最も簡単な例と言えます。

@@ -1,0 +1,64 @@
+◆ 前提知識：glibc の tcache 機構とは？
+
+    glibc 2.26以降、tcache（thread cache）という仕組みが導入され、小さいサイズの malloc/free が高速化されています。
+
+    free() したチャンクは、スレッドローカルな tcache に追加されます。
+
+    tcache_entry は次のような構造体です（glibc内部）：
+
+typedef struct tcache_entry {
+  struct tcache_entry *next;
+  void *key;
+} tcache_entry;
+
+    通常、同じチャンクの2重解放は検出され、free() 時に key チェック（非NULLであることなど）でブロックされます。
+
+◆ コード解説
+
+void *m;
+
+m = malloc(0x18);           // 小さなチャンクを確保（tcache対象サイズ）
+printf("m = %p\n", m);
+
+free(m);                    // チャンクmをtcacheに追加
+
+((tcache_entry*)m)->key = NULL; // ← 重要！ tcacheの key フィールドをNULLに
+free(m);                    // ← 2回目のfree（通常はダブルフリーでabortだが、keyがNULLなのでバイパスされる）
+
+→ ここで、key を NULL に書き換えたことで、glibc のセーフティチェックが無効化され、同じアドレスのチャンクが tcache に二重登録されます。
+◆ その後の malloc 呼び出し：
+
+printf("1st malloc : %p\n", malloc(0x18));
+printf("2nd malloc : %p\n", malloc(0x18));
+
+    tcache に2回追加された同じチャンクが、2回の malloc() で同じアドレスとして戻ってくる。
+
+    同じアドレスのチャンクが2回返されるため、「同じメモリ領域を2つの異なる用途で使えてしまう」＝Use-After-Freeや任意の書き換えに繋がる。
+
+◆ このコードがしていることまとめ
+動作	意味
+malloc(0x18)	小チャンク確保（tcache対象）
+free(m)	tcache に登録（1個目）
+((tcache_entry*)m)->key = NULL	glibcの二重解放チェックを回避するための細工
+free(m)	本来クラッシュだが key==NULL により bypass、tcacheに同じチャンクが再登録される
+malloc 2回	同じアドレスが2回返る！（→悪用の起点）
+◆ 何ができるのか？
+
+このように二重登録させると：
+
+    malloc() の戻り値が同じになり、2つのポインタが 同一の物理メモリを指す。
+
+    それにより、メモリ破壊・任意のアドレス書き換え・任意コード実行のトリガにできる。
+
+    特に、次に確保される tcache_entry の next ポインタを書き換えることで、任意アドレスを malloc で返させる tcache poisoning 攻撃が可能。
+
+◆ セキュリティ的には？
+
+これは明らかに脆弱性（ダブルフリー＋チェック回避）であり、CVE になりうる重大な脆弱性の典型です。glibcのバージョンによってはこのような攻撃が未然に防がれるようになっているため、最新バージョンへの更新が重要です。
+◆ 参考用語
+
+    tcache poisoning：tcache 内の next ポインタを偽アドレスに書き換えて、malloc() で任意のアドレスを取得する手法。
+
+    double free：同じメモリを2回解放すること。未対策なら深刻な脆弱性。
+
+
